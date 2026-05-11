@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class DeviceAction {
     private String sensorId;
-    private String type;   // ACTIVATE, DEACTIVATE, INVERSE, SET_VALUE
+    private ActionType type;    // ACTIVATE, DEACTIVATE, INVERSE, SET_VALUE
     private Integer value;
 }

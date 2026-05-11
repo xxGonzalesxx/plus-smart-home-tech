@@ -22,7 +22,7 @@ public class HubEventMapper {
             DeviceAddedEvent added = (DeviceAddedEvent) event;
             builder.setPayload(DeviceAddedEventAvro.newBuilder()
                     .setId(added.getId())
-                    .setType(DeviceTypeAvro.valueOf(added.getDeviceType()))
+                    .setType(DeviceTypeAvro.valueOf(added.getDeviceType().name()))
                     .build());
         } else if (event instanceof DeviceRemovedEvent) {
             DeviceRemovedEvent removed = (DeviceRemovedEvent) event;
@@ -32,12 +32,10 @@ public class HubEventMapper {
         } else if (event instanceof ScenarioAddedEvent) {
             ScenarioAddedEvent scenario = (ScenarioAddedEvent) event;
 
-            // Конвертируем условия
             var conditions = scenario.getConditions().stream()
                     .map(HubEventMapper::toConditionAvro)
                     .collect(Collectors.toList());
 
-            // Конвертируем действия
             var actions = scenario.getActions().stream()
                     .map(HubEventMapper::toActionAvro)
                     .collect(Collectors.toList());
@@ -60,30 +58,18 @@ public class HubEventMapper {
     private static ScenarioConditionAvro toConditionAvro(ScenarioCondition condition) {
         ScenarioConditionAvro.Builder builder = ScenarioConditionAvro.newBuilder()
                 .setSensorId(condition.getSensorId())
-                .setType(ConditionTypeAvro.valueOf(condition.getType()))
-                .setOperation(ConditionOperationAvro.valueOf(condition.getOperation()));
-
-        // Устанавливаем value (может быть int или null)
-        if (condition.getValue() != null) {
-            builder.setValue(condition.getValue());
-        } else {
-            builder.setValue(null);
-        }
+                .setType(ConditionTypeAvro.valueOf(condition.getType().name()))
+                .setOperation(ConditionOperationAvro.valueOf(condition.getOperation().name()))
+                .setValue(condition.getValue());
 
         return builder.build();
     }
 
     private static DeviceActionAvro toActionAvro(DeviceAction action) {
-        DeviceActionAvro.Builder builder = DeviceActionAvro.newBuilder()
+        return DeviceActionAvro.newBuilder()
                 .setSensorId(action.getSensorId())
-                .setType(ActionTypeAvro.valueOf(action.getType()));
-
-        if (action.getValue() != null) {
-            builder.setValue(action.getValue());
-        } else {
-            builder.setValue(null);
-        }
-
-        return builder.build();
+                .setType(ActionTypeAvro.valueOf(action.getType().name()))
+                .setValue(action.getValue())
+                .build();
     }
 }
