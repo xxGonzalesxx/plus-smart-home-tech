@@ -1,4 +1,50 @@
 @namespace("ru.yandex.practicum.kafka.telemetry.event")
 protocol SensorEventProtocol {
 
+    enum SensorEventTypeAvro {
+        MOTION_SENSOR_EVENT,
+        TEMPERATURE_SENSOR_EVENT,
+        LIGHT_SENSOR_EVENT,
+        CLIMATE_SENSOR_EVENT,
+        SWITCH_SENSOR_EVENT
+    }
+
+    record LightSensorAvro {
+        int link_quality;
+        int luminosity;
+    }
+
+    record SwitchSensorAvro {
+        boolean state;
+    }
+
+    record MotionSensorAvro {
+        int link_quality;
+        boolean motion;
+        int voltage;
+    }
+
+    record TemperatureSensorAvro {
+        int temperature_c;
+        int temperature_f;
+    }
+
+    record ClimateSensorAvro {
+        int temperature_c;
+        int humidity;
+        int co2_level;
+    }
+
+    record SensorEventAvro {
+        string id;
+        string hub_id;
+        long timestamp;
+        union {
+            ClimateSensorAvro,
+            LightSensorAvro,
+            MotionSensorAvro,
+            SwitchSensorAvro,
+            TemperatureSensorAvro
+        } payload;
+    }
 }
