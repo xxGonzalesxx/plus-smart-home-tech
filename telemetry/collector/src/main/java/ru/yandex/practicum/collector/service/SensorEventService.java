@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.collector.dto.sensor.SensorEvent;
 import ru.yandex.practicum.collector.mapper.SensorEventMapper;
 import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
-import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class SensorEventService {
     // Для gRPC запросов
     public void processSensorEvent(SensorEventProto protoEvent) {
         try {
-            SensorEventAvro avroEvent = convertProtoToAvro(protoEvent);  // ← SensorEventAvro, не HubEventAvro
+            SensorEventAvro avroEvent = convertProtoToAvro(protoEvent);
             byte[] data = serializeAvro(avroEvent);
             kafkaTemplate.send(TOPIC, protoEvent.getHubId(), data);
             log.info("Sent sensor event from gRPC to Kafka: id={}", protoEvent.getId());
@@ -48,29 +48,57 @@ public class SensorEventService {
     }
 
     private SensorEventAvro convertProtoToAvro(SensorEventProto protoEvent) {
-        // TODO: реализовать преобразование Protobuf → Avro
-        // Пример для MotionSensorEvent:
         SensorEventAvro.Builder builder = SensorEventAvro.newBuilder()
                 .setId(protoEvent.getId())
                 .setHubId(protoEvent.getHubId())
-                .setTimestamp(protoEvent.getTimestamp().getSeconds() * 1000);
+                .setTimestamp(protoEvent.getTimestamp().getSeconds() * 1000 +
+                        protoEvent.getTimestamp().getNanos() / 1_000_000);
 
-        // Определяем тип payload и заполняем
+        // Motion Sensor
         if (protoEvent.hasMotionSensor()) {
             var motion = protoEvent.getMotionSensor();
-            builder.setPayload(ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro.newBuilder()
+            builder.setPayload(MotionSensorAvro.newBuilder()
                     .setLinkQuality(motion.getLinkQuality())
                     .setMotion(motion.getMotion())
                     .setVoltage(motion.getVoltage())
                     .build());
-        } else if (protoEvent.hasTemperatureSensor()) {
+        }
+        // Temperature Sensor
+        else if (protoEvent.hasTemperatureSensor()) {
             var temp = protoEvent.getTemperatureSensor();
-            builder.setPayload(ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro.newBuilder()
+            builder.setPayload(TemperatureSensorAvro.newBuilder()
                     .setTemperatureC(temp.getTemperatureC())
                     .setTemperatureF(temp.getTemperatureF())
                     .build());
         }
-        // TODO: добавить остальные типы (Light, Climate, Switch)
+        // Light Sensor
+        else if (protoEvent.hasLightSensor()) {
+            var light = protoEvent.getLightSensor();
+            builder.setPayload(LightSensorAvro.newBuilder()
+                    .setLinkQuality(light.getLinkQuality())
+                    .setLuminosity(light.getLuminosity())
+                    .build());
+        }
+        // Climate Sensor
+        else if (protoEvent.hasClimateSensor()) {
+            var climate = protoEvent.getClimateSensor();
+            builder.setPayload(ClimateSensorAvro.newBuilder()
+                    .setTemperatureC(climate.getTemperatureC())
+                    .setHumidity(climate.getHumidity())
+                    .setCo2Level(climate.getCo2Level())
+                    .build());
+        }
+        // Switch Sensor
+        else if (protoEvent.hasSwitchSensor()) {
+            var switchSensor = protoEvent.getSwitchSensor();
+            builder.setPayload(SwitchSensorAvro.newBuilder()
+                    .setState(switchSensor.getState())
+                    .build());
+        }
+        else {
+            log.error("Unknown sensor event type: no payload set for id={}", protoEvent.getId());
+            throw new IllegalArgumentException("Unknown sensor event type");
+        }
 
         return builder.build();
     }
@@ -81,6 +109,8 @@ public class SensorEventService {
         DatumWriter<SensorEventAvro> writer = new SpecificDatumWriter<>(SensorEventAvro.getClassSchema());
         writer.write(event, encoder);
         encoder.flush();
-        return outputStream.toByteArray();
+        byte[] result = outputStream.toByteArray();
+        outputStream.close();
+        return result;
     }
 }
