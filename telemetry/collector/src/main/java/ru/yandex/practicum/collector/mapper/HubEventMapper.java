@@ -6,6 +6,7 @@ import ru.yandex.practicum.collector.dto.hub.model.DeviceAction;
 import ru.yandex.practicum.collector.dto.hub.model.ScenarioCondition;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @UtilityClass
@@ -32,11 +33,17 @@ public class HubEventMapper {
         } else if (event instanceof ScenarioAddedEvent) {
             ScenarioAddedEvent scenario = (ScenarioAddedEvent) event;
 
-            var conditions = scenario.getConditions().stream()
+            // Null-safety для списка условий
+            var conditions = (scenario.getConditions() != null ? scenario.getConditions() : Collections.<ScenarioCondition>emptyList())
+                    .stream()
+                    .filter(condition -> condition != null)  // фильтруем null элементы
                     .map(HubEventMapper::toConditionAvro)
                     .collect(Collectors.toList());
 
-            var actions = scenario.getActions().stream()
+            // Null-safety для списка действий
+            var actions = (scenario.getActions() != null ? scenario.getActions() : Collections.<DeviceAction>emptyList())
+                    .stream()
+                    .filter(action -> action != null)  // фильтруем null элементы
                     .map(HubEventMapper::toActionAvro)
                     .collect(Collectors.toList());
 
@@ -56,16 +63,19 @@ public class HubEventMapper {
     }
 
     private static ScenarioConditionAvro toConditionAvro(ScenarioCondition condition) {
-        ScenarioConditionAvro.Builder builder = ScenarioConditionAvro.newBuilder()
+        if (condition == null) return null;
+
+        return ScenarioConditionAvro.newBuilder()
                 .setSensorId(condition.getSensorId())
                 .setType(ConditionTypeAvro.valueOf(condition.getType().name()))
                 .setOperation(ConditionOperationAvro.valueOf(condition.getOperation().name()))
-                .setValue(condition.getValue());
-
-        return builder.build();
+                .setValue(condition.getValue())
+                .build();
     }
 
     private static DeviceActionAvro toActionAvro(DeviceAction action) {
+        if (action == null) return null;
+
         return DeviceActionAvro.newBuilder()
                 .setSensorId(action.getSensorId())
                 .setType(ActionTypeAvro.valueOf(action.getType().name()))
