@@ -23,22 +23,72 @@ public class HubEventService {
     private static final String TOPIC = "telemetry.hubs.v1";
 
     public void send(HubEvent event) {
+        if (event == null) {
+            log.error("❌ HubEventService.send() received null event");
+            return;
+        }
+
+        String eventType = event.getType();
+        String hubId = event.getHubId();
+        
         try {
+            log.debug("🔄 Processing {} for hubId={}", eventType, hubId);
+
+            // Step 1: Map to Avro
             HubEventAvro avroEvent = HubEventMapper.toAvro(event);
-            byte[] data = serializeAvro(avroEvent);  // ← ИСПОЛЬЗУЙ ЭТОТ МЕТОД
-            kafkaTemplate.send(TOPIC, event.getHubId(), data);
-            log.debug("Sent hub event to Kafka: hubId={}", event.getHubId());
+            if (avroEvent == null) {
+                log.error("❌ HubEventMapper.toAvro() returned null for event type: {}, hubId: {}", 
+                        eventType, hubId);
+                return;
+            }
+            log.debug("✓ Successfully mapped {} to Avro", eventType);
+
+            // Step 2: Serialize to binary
+            byte[] data = serializeAvro(avroEvent);
+            if (data == null || data.length == 0) {
+                log.error("❌ Avro serialization returned empty data for event type: {}, hubId: {}", 
+                        eventType, hubId);
+                return;
+            }
+            log.debug("✓ Successfully serialized {} to {} bytes", eventType, data.length);
+
+            // Step 3: Send to Kafka
+            kafkaTemplate.send(TOPIC, hubId, data);
+            log.info("✅ Successfully sent {} to Kafka: hubId={}, topic={}, payload_size={} bytes", 
+                    eventType, hubId, TOPIC, data.length);
+                    
+        } catch (NullPointerException e) {
+            log.error("💥 NullPointerException while processing {}: {}", eventType, e.getMessage(), e);
         } catch (IOException e) {
-            log.error("Failed to serialize hub event to Avro", e);
+            log.error("💥 IOException while serializing {}: {}", eventType, e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("💥 Unexpected exception while processing {}: {}", eventType, e.getMessage(), e);
         }
     }
 
     private byte[] serializeAvro(HubEventAvro event) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(outputStream, null);
-        DatumWriter<HubEventAvro> writer = new SpecificDatumWriter<>(HubEventAvro.getClassSchema());
-        writer.write(event, encoder);
-        encoder.flush();
-        return outputStream.toByteArray();
+        if (event == null) {
+            log.error("❌ serializeAvro() received null event");
+            return new byte[0];
+        }
+
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(outputStream, null);
+            DatumWriter<HubEventAvro> writer = new SpecificDatumWriter<>(HubEventAvro.getClassSchema());
+            writer.write(event, encoder);
+            encoder.flush();
+            
+            byte[] result = outputStream.toByteArray();
+            log.debug("📦 Serialized Avro event to {} bytes", result.length);
+            return result;
+            
+        } catch (IOException e) {
+            log.error("💥 Failed to serialize Avro event: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("💥 Unexpected error during Avro serialization: {}", e.getMessage(), e);
+            throw new IOException("Failed to serialize Avro event", e);
+        }
     }
 }
