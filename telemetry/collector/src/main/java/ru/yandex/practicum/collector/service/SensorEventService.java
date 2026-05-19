@@ -37,6 +37,12 @@ public class SensorEventService {
 
     // Для gRPC запросов
     public void processSensorEvent(SensorEventProto protoEvent) {
+        log.info("=== DEBUG: Proto payload case = {}", protoEvent.getPayloadCase());
+        log.info("=== DEBUG: Has motion = {}", protoEvent.hasMotionSensor());
+        log.info("=== DEBUG: Has temperature = {}", protoEvent.hasTemperatureSensor());
+        log.info("=== DEBUG: Has light = {}", protoEvent.hasLightSensor());
+        log.info("=== DEBUG: Has climate = {}", protoEvent.hasClimateSensor());
+        log.info("=== DEBUG: Has switch = {}", protoEvent.hasSwitchSensor());
         try {
             SensorEventAvro avroEvent = convertProtoToAvro(protoEvent);
             byte[] data = serializeAvro(avroEvent);

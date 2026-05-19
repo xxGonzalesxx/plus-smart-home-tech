@@ -36,12 +36,10 @@ public class HubEventService {
         }
     }
 
-    // Для gRPC запросов (НОВЫЙ)
+    // Для gRPC запросов
     public void processHubEvent(HubEventProto protoEvent) {
         try {
-            // TODO: конвертировать Protobuf → Avro
             HubEventAvro avroEvent = convertProtoToAvro(protoEvent);
-
             byte[] data = serializeAvro(avroEvent);
             kafkaTemplate.send(TOPIC, protoEvent.getHubId(), data);
             log.info("Sent hub event from gRPC to Kafka: hubId={}", protoEvent.getHubId());
@@ -50,13 +48,13 @@ public class HubEventService {
         }
     }
 
+    // Для gRPC запросов (НОВЫЙ)
     private HubEventAvro convertProtoToAvro(HubEventProto protoEvent) {
         HubEventAvro.Builder builder = HubEventAvro.newBuilder()
                 .setHubId(protoEvent.getHubId())
                 .setTimestamp(protoEvent.getTimestamp().getSeconds() * 1000 +
                         protoEvent.getTimestamp().getNanos() / 1_000_000);
 
-        // Определяем тип события и заполняем payload
         if (protoEvent.hasDeviceAdded()) {
             var deviceAdded = protoEvent.getDeviceAdded();
             builder.setPayload(DeviceAddedEventAvro.newBuilder()
@@ -71,8 +69,11 @@ public class HubEventService {
         } else if (protoEvent.hasScenarioAdded()) {
             var scenarioAdded = protoEvent.getScenarioAdded();
 
-            // Конвертируем условия
-            var conditions = scenarioAdded.getConditionList().stream()
+            // Null-safety для списка условий
+            var conditionList = scenarioAdded.getConditionList();
+            var conditions = (conditionList != null ? conditionList : java.util.Collections.<ru.yandex.practicum.grpc.telemetry.event.ScenarioConditionProto>emptyList())
+                    .stream()
+                    .filter(condition -> condition != null)
                     .map(condition -> ScenarioConditionAvro.newBuilder()
                             .setSensorId(condition.getSensorId())
                             .setType(ConditionTypeAvro.valueOf(condition.getType().name()))
@@ -81,8 +82,11 @@ public class HubEventService {
                             .build())
                     .collect(Collectors.toList());
 
-            // Конвертируем действия
-            var actions = scenarioAdded.getActionList().stream()
+            // Null-safety для списка действий
+            var actionList = scenarioAdded.getActionList();
+            var actions = (actionList != null ? actionList : java.util.Collections.<ru.yandex.practicum.grpc.telemetry.event.DeviceActionProto>emptyList())
+                    .stream()
+                    .filter(action -> action != null)
                     .map(action -> DeviceActionAvro.newBuilder()
                             .setSensorId(action.getSensorId())
                             .setType(ActionTypeAvro.valueOf(action.getType().name()))
