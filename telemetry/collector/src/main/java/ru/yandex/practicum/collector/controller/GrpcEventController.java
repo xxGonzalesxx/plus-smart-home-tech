@@ -23,6 +23,10 @@ public class GrpcEventController extends CollectorControllerGrpc.CollectorContro
     public void collectSensorEvent(SensorEventProto request, StreamObserver<Empty> responseObserver) {
         try {
             log.info("Received gRPC sensor event: id={}, hubId={}", request.getId(), request.getHubId());
+
+            // ✅ ОТПРАВКА В KAFKA
+            sensorEventService.processSensorEvent(request);
+
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -35,6 +39,10 @@ public class GrpcEventController extends CollectorControllerGrpc.CollectorContro
     public void collectHubEvent(HubEventProto request, StreamObserver<Empty> responseObserver) {
         try {
             log.info("Received gRPC hub event: hubId={}", request.getHubId());
+
+            // ✅ ОТПРАВКА В KAFKA
+            hubEventService.processHubEvent(request);
+
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
         } catch (Exception e) {

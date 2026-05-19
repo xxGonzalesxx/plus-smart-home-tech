@@ -19,9 +19,8 @@ public class HubEventController {
 
     @PostMapping("/hubs")
     public void collectHubEvent(@RequestBody HubEvent event) {
-        log.info("Received hub event: type={}, hubId={}",
+        log.info("Received hub event (REST): type={}, hubId={}",
                 event.getType(), event.getHubId());
-
         hubEventService.send(event);
     }
 }

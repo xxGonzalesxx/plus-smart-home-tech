@@ -19,9 +19,8 @@ public class SensorEventController {
 
     @PostMapping("/sensors")
     public void collectSensorEvent(@RequestBody SensorEvent event) {
-        log.info("Received sensor event: type={}, hubId={}, id={}",
+        log.info("Received sensor event (REST): type={}, hubId={}, id={}",
                 event.getType(), event.getHubId(), event.getId());
-
         sensorEventService.send(event);
     }
 }
