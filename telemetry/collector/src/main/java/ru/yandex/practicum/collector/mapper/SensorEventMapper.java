@@ -2,8 +2,12 @@ package ru.yandex.practicum.collector.mapper;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import ru.yandex.practicum.collector.dto.sensor.*;
-import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.collector.dto.sensor.LightSensorEvent;
+import ru.yandex.practicum.collector.dto.sensor.SensorEvent;
+import ru.yandex.practicum.collector.dto.sensor.SwitchSensorEvent;
+import ru.yandex.practicum.kafka.telemetry.event.LightSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
 
 @Slf4j
 @UtilityClass

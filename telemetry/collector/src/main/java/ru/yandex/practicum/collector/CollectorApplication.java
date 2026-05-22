@@ -1,5 +1,6 @@
 package ru.yandex.practicum.collector;
 
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,16 +25,16 @@ public class CollectorApplication {
     }
 
     @Bean
-    public ProducerFactory<String, byte[]> producerFactory() {
+    public ProducerFactory<String, SpecificRecordBase> producerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.ByteArraySerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ru.yandex.practicum.collector.broker.CollectorAvroSerializer.class);
         return new DefaultKafkaProducerFactory<>(config);
     }
 
     @Bean
-    public KafkaTemplate<String, byte[]> kafkaTemplate() {
+    public KafkaTemplate<String, SpecificRecordBase> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }

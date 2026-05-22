@@ -2,7 +2,10 @@ package ru.yandex.practicum.collector.mapper;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import ru.yandex.practicum.collector.dto.hub.*;
+import ru.yandex.practicum.collector.dto.hub.DeviceAddedEvent;
+import ru.yandex.practicum.collector.dto.hub.DeviceRemovedEvent;
+import ru.yandex.practicum.collector.dto.hub.HubEvent;
+import ru.yandex.practicum.collector.dto.hub.ScenarioAddedEvent;
 import ru.yandex.practicum.collector.dto.hub.model.DeviceAction;
 import ru.yandex.practicum.collector.dto.hub.model.ScenarioCondition;
 import ru.yandex.practicum.kafka.telemetry.event.*;
