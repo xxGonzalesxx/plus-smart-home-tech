@@ -1,15 +1,42 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: collector
+  datasource:
+    url: jdbc:postgresql://localhost:5432/smart_home_tech
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL13Dialect
+        format_sql: true
+        show_sql: false
+    show-sql: false
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: analyzer-group
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+grpc:
+  client:
+    hub-router:
+      address: localhost:9090
+      enable-keep-alive: true
+      keep-alive-time: 30
+      keep-alive-timeout: 5
+      keep-alive-without-calls: true
 
 logging:
   level:
+    root: INFO
     ru.yandex.practicum: DEBUG
+    ru.yandex.practicum.collector.processor: DEBUG
