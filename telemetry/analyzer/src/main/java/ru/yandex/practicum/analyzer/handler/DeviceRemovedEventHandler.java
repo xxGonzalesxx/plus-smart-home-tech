@@ -3,8 +3,11 @@ package ru.yandex.practicum.analyzer.handler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import ru.yandex.practicum.analyzer.repository.SensorRepository;
 import ru.yandex.practicum.kafka.telemetry.event.DeviceRemovedEventAvro;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -19,10 +22,13 @@ public class DeviceRemovedEventHandler implements HubEventHandler<DeviceRemovedE
 
     @Override
     public void handle(String hubId, DeviceRemovedEventAvro event) {
-        sensorRepository.findById(event.getId())
-                .ifPresent(sensor -> {
-                    sensorRepository.delete(sensor);
-                    log.info("Device removed: id={}, hubId={}", event.getId(), hubId);
-                });
+        if (!sensorRepository.existsByIdInAndHubId(List.of(event.getId()), hubId)) {
+            log.info("Удаление устройства. Устройство с ID: {} не найдено в хабе с ID: {}.", event.getId(), hubId);
+            return;
+        }
+
+        sensorRepository.deleteById(event.getId());
+        log.info("Удаление устройства с ID: {} в хабе с ID: {}.", event.getId(), hubId);
     }
+
 }
