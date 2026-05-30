@@ -16,15 +16,12 @@ public class AnalyzerRunner implements CommandLineRunner {
     private final SnapshotProcessor snapshotProcessor;
 
     @Override
-    public void run(String... args) {
+    public void run(String[] args) {
         log.info("Starting Analyzer...");
 
-        // Запускаем HubEventProcessor в отдельном потоке
         Thread hubEventsThread = new Thread(hubEventProcessor);
         hubEventsThread.setName("HubEventHandlerThread");
         hubEventsThread.start();
-
-        // Запускаем SnapshotProcessor в основном потоке
-        snapshotProcessor.start();
+        log.info("SnapshotProcessor is ready (using Kafka listener)");
     }
 }

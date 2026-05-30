@@ -8,13 +8,15 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: none  # оставляем none, чтобы не мешать schema.sql
+      ddl-auto: none
     show-sql: true
-    defer-datasource-initialization: true  # ВАЖНО: schema.sql выполнится после настройки Hibernate
+    defer-datasource-initialization: true
   sql:
     init:
-      mode: always  # всегда выполнять скрипты инициализации
+      mode: always
       platform: postgresql
+      schema-locations:
+        - classpath:schema.sql
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:

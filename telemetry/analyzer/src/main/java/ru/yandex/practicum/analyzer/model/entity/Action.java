@@ -11,14 +11,10 @@ import ru.yandex.practicum.analyzer.model.enums.ActionType;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class Action {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "sensor_id", nullable = false)
-    private String sensorId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

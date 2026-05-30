@@ -12,14 +12,10 @@ import ru.yandex.practicum.analyzer.model.enums.ConditionType;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class Condition {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "sensor_id", nullable = false)
-    private String sensorId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

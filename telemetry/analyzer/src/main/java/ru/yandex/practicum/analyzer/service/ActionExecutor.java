@@ -22,14 +22,14 @@ public class ActionExecutor {
     @GrpcClient("hub-router")
     private HubRouterControllerGrpc.HubRouterControllerBlockingStub hubRouterClient;
 
-    public void executeAction(Scenario scenario, Action action, String hubId) {
+    public void executeAction(Scenario scenario, Action action, String hubId, String sensorId) {
         try {
             // Преобразуем ActionType (enum из entity) в ActionTypeProto
             ActionTypeProto actionType = ActionTypeProto.valueOf(action.getType().name());
 
             // Создаём DeviceActionProto
             DeviceActionProto deviceAction = DeviceActionProto.newBuilder()
-                    .setSensorId(action.getSensorId())
+                    .setSensorId(sensorId)
                     .setType(actionType)
                     .setValue(action.getValue() != null ? action.getValue() : 0)
                     .build();
@@ -48,10 +48,10 @@ public class ActionExecutor {
             // Отправляем команду в Hub Router
             hubRouterClient.handleDeviceAction(request);
 
-            log.info("Action executed: scenario='{}', actionType={}, sensorId={}, hubId={}",
-                    scenario.getName(), action.getType(), action.getSensorId(), hubId);
+            log.info("✅ Action executed: scenario='{}', actionType={}, sensorId={}, hubId={}",
+                    scenario.getName(), action.getType(), sensorId, hubId);
         } catch (Exception e) {
-            log.error("Failed to execute action: scenario='{}', hubId={}, error={}",
+            log.error("❌ Failed to execute action: scenario='{}', hubId={}, error={}",
                     scenario.getName(), hubId, e.getMessage(), e);
         }
     }

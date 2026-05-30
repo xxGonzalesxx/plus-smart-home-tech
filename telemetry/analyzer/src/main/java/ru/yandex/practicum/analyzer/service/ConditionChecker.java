@@ -11,8 +11,7 @@ import ru.yandex.practicum.kafka.telemetry.event.*;
 @Service
 public class ConditionChecker {
 
-    public boolean checkCondition(Condition condition, SensorsSnapshotAvro snapshot) {
-        String sensorId = condition.getSensorId();
+    public boolean checkCondition(Condition condition, String sensorId, SensorsSnapshotAvro snapshot) {
         SensorStateAvro sensorState = snapshot.getSensorsState().get(sensorId);
 
         if (sensorState == null) {
@@ -50,6 +49,7 @@ public class ConditionChecker {
             }
             case TEMPERATURE -> {
                 if (data instanceof TemperatureSensorAvro temp) yield temp.getTemperatureC();
+                if (data instanceof ClimateSensorAvro climate) yield climate.getTemperatureC();
                 yield null;
             }
             case CO2LEVEL -> {

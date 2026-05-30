@@ -10,35 +10,50 @@ import java.util.List;
 @Table(name = "scenarios")
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Scenario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "hub_id", nullable = false)
     private String hubId;
-
-    @Column(nullable = false)
     private String name;
 
-    @ManyToMany
-    @JoinTable(
-            name = "scenario_conditions",
-            joinColumns = @JoinColumn(name = "scenario_id"),
-            inverseJoinColumns = @JoinColumn(name = "condition_id")
-    )
+    @OneToMany(mappedBy = "scenario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<Condition> conditions = new ArrayList<>();
+    private List<ScenarioAction> actions = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "scenario_actions",
-            joinColumns = @JoinColumn(name = "scenario_id"),
-            inverseJoinColumns = @JoinColumn(name = "action_id")
-    )
+    @OneToMany(mappedBy = "scenario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<Action> actions = new ArrayList<>();
+    private List<ScenarioCondition> conditions = new ArrayList<>();
+
+    // вспомогательные методы
+    public void addAction(ScenarioAction action) {
+        actions.add(action);
+        action.setScenario(this);
+    }
+
+    public void addCondition(ScenarioCondition condition) {
+        conditions.add(condition);
+        condition.setScenario(this);
+    }
+
+    public void setConditions(List<ScenarioCondition> conditions) {
+        this.conditions.clear();
+        if (conditions != null) {
+            this.conditions.addAll(conditions);
+            conditions.forEach(c -> c.setScenario(this));
+        }
+    }
+
+    public void setActions(List<ScenarioAction> actions) {
+        this.actions.clear();
+        if (actions != null) {
+            this.actions.addAll(actions);
+            actions.forEach(a -> a.setScenario(this));
+        }
+    }
 }

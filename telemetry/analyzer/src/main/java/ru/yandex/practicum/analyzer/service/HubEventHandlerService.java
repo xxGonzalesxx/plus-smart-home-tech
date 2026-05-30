@@ -8,7 +8,8 @@ import ru.yandex.practicum.analyzer.model.entity.*;
 import ru.yandex.practicum.analyzer.repository.*;
 import ru.yandex.practicum.kafka.telemetry.event.*;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -23,15 +24,16 @@ public class HubEventHandlerService {
     @Transactional
     public void processHubEvent(HubEventAvro event) {
         Object payload = event.getPayload();
+        String hubId = event.getHubId();
 
         if (payload instanceof DeviceAddedEventAvro) {
-            handleDeviceAdded((DeviceAddedEventAvro) payload, event.getHubId());
+            handleDeviceAdded((DeviceAddedEventAvro) payload, hubId);
         } else if (payload instanceof DeviceRemovedEventAvro) {
-            handleDeviceRemoved((DeviceRemovedEventAvro) payload, event.getHubId());
+            handleDeviceRemoved((DeviceRemovedEventAvro) payload, hubId);
         } else if (payload instanceof ScenarioAddedEventAvro) {
-            handleScenarioAdded((ScenarioAddedEventAvro) payload, event.getHubId());
+            handleScenarioAdded((ScenarioAddedEventAvro) payload, hubId);
         } else if (payload instanceof ScenarioRemovedEventAvro) {
-            handleScenarioRemoved((ScenarioRemovedEventAvro) payload, event.getHubId());
+            handleScenarioRemoved((ScenarioRemovedEventAvro) payload, hubId);
         } else {
             log.warn("Unknown hub event type: {}", payload.getClass().getSimpleName());
         }
@@ -56,44 +58,59 @@ public class HubEventHandlerService {
 
     @Transactional
     public void handleScenarioAdded(ScenarioAddedEventAvro event, String hubId) {
-        // Проверяем, существует ли уже такой сценарий
         if (scenarioRepository.findByHubIdAndName(hubId, event.getName()).isPresent()) {
             log.warn("Scenario already exists: hubId={}, name={}", hubId, event.getName());
             return;
         }
 
-        // Сохраняем условия
-        var conditions = event.getConditions().stream()
-                .map(cond -> Condition.builder()
-                        .sensorId(cond.getSensorId())
-                        .type(ru.yandex.practicum.analyzer.model.enums.ConditionType.valueOf(cond.getType().name()))
-                        .operation(ru.yandex.practicum.analyzer.model.enums.ConditionOperation.valueOf(cond.getOperation().name()))
-                        .value(cond.getValue() instanceof Integer ? (Integer) cond.getValue() : null)
-                        .build())
-                .collect(Collectors.toList());
-        conditionRepository.saveAll(conditions);
-
-        // Сохраняем действия
-        var actions = event.getActions().stream()
-                .map(act -> Action.builder()
-                        .sensorId(act.getSensorId())
-                        .type(ru.yandex.practicum.analyzer.model.enums.ActionType.valueOf(act.getType().name()))
-                        .value(act.getValue())
-                        .build())
-                .collect(Collectors.toList());
-        actionRepository.saveAll(actions);
-
         // Создаём сценарий
         Scenario scenario = Scenario.builder()
                 .hubId(hubId)
                 .name(event.getName())
-                .conditions(conditions)
-                .actions(actions)
                 .build();
+        scenario = scenarioRepository.save(scenario);
+
+        // Сохраняем условия и связываем со сценарием
+        List<ScenarioCondition> scenarioConditions = new ArrayList<>();
+        for (var cond : event.getConditions()) {
+            Condition condition = Condition.builder()
+                    .type(ru.yandex.practicum.analyzer.model.enums.ConditionType.valueOf(cond.getType().name()))
+                    .operation(ru.yandex.practicum.analyzer.model.enums.ConditionOperation.valueOf(cond.getOperation().name()))
+                    .value(cond.getValue() instanceof Integer ? (Integer) cond.getValue() : 0)
+                    .build();
+            condition = conditionRepository.save(condition);
+
+            ScenarioCondition scenarioCondition = ScenarioCondition.builder()
+                    .scenario(scenario)
+                    .sensorId(cond.getSensorId())
+                    .condition(condition)
+                    .build();
+            scenarioConditions.add(scenarioCondition);
+        }
+
+        // Сохраняем действия и связываем со сценарием
+        List<ScenarioAction> scenarioActions = new ArrayList<>();
+        for (var act : event.getActions()) {
+            Action action = Action.builder()
+                    .type(ru.yandex.practicum.analyzer.model.enums.ActionType.valueOf(act.getType().name()))
+                    .value(act.getValue())
+                    .build();
+            action = actionRepository.save(action);
+
+            ScenarioAction scenarioAction = ScenarioAction.builder()
+                    .scenario(scenario)
+                    .sensorId(act.getSensorId())
+                    .action(action)
+                    .build();
+            scenarioActions.add(scenarioAction);
+        }
+
+        scenario.setConditions(scenarioConditions);
+        scenario.setActions(scenarioActions);
         scenarioRepository.save(scenario);
 
         log.info("Scenario added: hubId={}, name={}, conditions={}, actions={}",
-                hubId, event.getName(), conditions.size(), actions.size());
+                hubId, event.getName(), scenarioConditions.size(), scenarioActions.size());
     }
 
     private void handleScenarioRemoved(ScenarioRemovedEventAvro event, String hubId) {
