@@ -12,17 +12,18 @@ public class ActionMapper {
         result.setId(null);
         result.setType(deviceAction.getType().toString());
         result.setValue(getValue(deviceAction.getValue()));
-
         return result;
     }
 
     private Integer getValue(Object value) {
+        if (value == null) {
+            return 0;  // ✅ Возвращаем 0 вместо null
+        }
         if (value instanceof Integer) {
             return (Integer) value;
         } else if (value instanceof Boolean) {
             return (Boolean) value ? 1 : 0;
         }
-        return null;
+        return 0;  // ✅ Безопасное значение по умолчанию
     }
-
 }

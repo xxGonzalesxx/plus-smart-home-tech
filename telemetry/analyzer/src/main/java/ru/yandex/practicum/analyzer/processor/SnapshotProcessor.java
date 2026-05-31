@@ -70,47 +70,81 @@ public class SnapshotProcessor {
                     log.info("Поступили данные состояния датчиков: {}", record.value());
                     SensorsSnapshotAvro snapshot = record.value();
 
-                    scenarioRepository.findByHubId(snapshot.getHubId()).stream()
-                            .filter(scenario -> !scenario.getConditions().isEmpty())
-                            .filter(scenario -> matchConditions(scenario.getConditions(),
-                                    snapshot.getSensorsState()))
-                            .flatMap(scenario -> scenario.getActions().entrySet().stream()
-                                    .map(actionEntry -> Map.entry(scenario, actionEntry)))
-                            .forEach(contextEntry -> {
-                                Scenario scenario = contextEntry.getKey();
-                                Map.Entry<String, Action> actionEntry = contextEntry.getValue();
+                    // Получаем все сценарии для хаба
+                    List<Scenario> scenariosForHub = scenarioRepository.findByHubId(snapshot.getHubId());
+                    log.debug("Найдено сценариев для хаба {}: {}", snapshot.getHubId(), scenariosForHub.size());
 
-                                String sensorId = actionEntry.getKey();
-                                Action action = actionEntry.getValue();
-
-                                log.info("Выполняется действие для датчика {}: тип={}, значение={}",
-                                        sensorId, action.getType(), action.getValue());
-
-                                try {
-                                    DeviceActionProto actionProto = DeviceActionProto.newBuilder()
-                                            .setSensorId(sensorId)
-                                            .setType(ActionTypeProto.valueOf(action.getType().toUpperCase()))
-                                            .setValue(action.getValue() != null ? action.getValue() : 0)
-                                            .build();
-
-                                    Instant instant = Instant.now();
-                                    Timestamp timestampProto = Timestamp.newBuilder()
-                                            .setSeconds(instant.getEpochSecond())
-                                            .setNanos(instant.getNano())
-                                            .build();
-
-                                    DeviceActionRequest grpcRequest = DeviceActionRequest.newBuilder()
-                                            .setHubId(snapshot.getHubId())
-                                            .setScenarioName(scenario.getName())
-                                            .setAction(actionProto)
-                                            .setTimestamp(timestampProto)
-                                            .build();
-
-                                    hubRouterClient.handleDeviceAction(grpcRequest);
-                                    log.info("gRPC команда успешно доставлена для датчика {}", sensorId);
-                                } catch (Exception e) {
-                                    log.error("Не удалось отправить gRPC команду для датчика {}", sensorId, e);
+                    scenariosForHub.stream()
+                            .filter(scenario -> {
+                                boolean hasConditions = !scenario.getConditions().isEmpty();
+                                if (!hasConditions) {
+                                    log.debug("Сценарий {} не имеет условий, пропускаем", scenario.getName());
                                 }
+                                return hasConditions;
+                            })
+                            .filter(scenario -> {
+                                boolean conditionsMatch = matchConditions(scenario.getConditions(),
+                                        snapshot.getSensorsState());
+                                log.debug("Сценарий {}: условия совпадают? {}", scenario.getName(), conditionsMatch);
+                                return conditionsMatch;
+                            })
+                            .forEach(scenario -> {
+                                log.info("✓ Условия сценария '{}' выполнены!", scenario.getName());
+
+                                // Проверяем, есть ли действия в сценарии
+                                Map<String, Action> actions = scenario.getActions();
+                                if (actions == null || actions.isEmpty()) {
+                                    log.warn("⚠️ Сценарий '{}' не имеет действий для выполнения!", scenario.getName());
+                                    return;
+                                }
+
+                                log.debug("Действий для выполнения: {}", actions.size());
+
+                                actions.forEach((sensorId, action) -> {
+                                    log.debug("Выполняется действие для датчика {}: тип={}, значение={}",
+                                            sensorId, action.getType(), action.getValue());
+
+                                    try {
+                                        // Преобразуем Action в DeviceActionProto
+                                        DeviceActionProto actionProto = DeviceActionProto.newBuilder()
+                                                .setSensorId(sensorId)
+                                                .setType(ActionTypeProto.valueOf(action.getType().toUpperCase()))
+                                                .setValue(action.getValue() != null ? action.getValue() : 0)
+                                                .build();
+
+                                        log.debug("Action proto построен: sensorId={}, type={}, value={}",
+                                                actionProto.getSensorId(), actionProto.getType(), actionProto.getValue());
+
+                                        // Создаем timestamp
+                                        Instant instant = Instant.now();
+                                        Timestamp timestampProto = Timestamp.newBuilder()
+                                                .setSeconds(instant.getEpochSecond())
+                                                .setNanos(instant.getNano())
+                                                .build();
+
+                                        // Создаем и отправляем gRPC запрос
+                                        DeviceActionRequest grpcRequest = DeviceActionRequest.newBuilder()
+                                                .setHubId(snapshot.getHubId())
+                                                .setScenarioName(scenario.getName())
+                                                .setAction(actionProto)
+                                                .setTimestamp(timestampProto)
+                                                .build();
+
+                                        log.info("📤 Отправляю gRPC команду: hubId={}, scenario={}, sensorId={}, actionType={}",
+                                                snapshot.getHubId(), scenario.getName(), sensorId, action.getType());
+
+                                        hubRouterClient.handleDeviceAction(grpcRequest);
+
+                                        log.info("✅ gRPC команда успешно доставлена для датчика {}", sensorId);
+
+                                    } catch (IllegalArgumentException e) {
+                                        log.error("❌ Ошибка: неверный тип действия '{}'. Поддерживаемые типы: ACTIVATE, DEACTIVATE, INVERSE, SET_VALUE",
+                                                action.getType(), e);
+                                    } catch (Exception e) {
+                                        log.error("❌ Не удалось отправить gRPC команду для датчика {}: {}",
+                                                sensorId, e.getMessage(), e);
+                                    }
+                                });
                             });
                 }
             }
@@ -148,6 +182,7 @@ public class SnapshotProcessor {
 
             SensorStateAvro sensorState = sensorsState.get(sensorId);
             if (sensorState == null || sensorState.getData() == null) {
+                log.debug("Датчик {} не найден в снапшоте или его данные == null", sensorId);
                 return false;
             }
 
@@ -159,10 +194,14 @@ public class SnapshotProcessor {
 
                 Object actualValue = getSensorValue(sensorState.getData(), conditionType);
                 if (actualValue == null) {
+                    log.debug("Не удалось извлечь значение датчика {} для типа {}", sensorId, conditionType);
                     return false;
                 }
 
-                return checkOperation(actualValue, operation, condition.getValue());
+                boolean result = checkOperation(actualValue, operation, condition.getValue());
+                log.debug("Проверка условия для датчика {}: {} {} {} = {}",
+                        sensorId, actualValue, operation, condition.getValue(), result);
+                return result;
 
             } catch (IllegalArgumentException e) {
                 log.error("Ошибка маппинга Condition из БД в Avro Enum. Type: {}, Operation: {}",

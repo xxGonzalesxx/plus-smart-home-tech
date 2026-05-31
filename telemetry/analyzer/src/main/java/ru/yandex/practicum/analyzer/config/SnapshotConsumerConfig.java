@@ -2,19 +2,15 @@ package ru.yandex.practicum.analyzer.config;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 @Getter
 @Setter
-@Configuration
-@ConfigurationProperties("custom.kafka-snapshot")
+@Component
+@ConfigurationProperties(prefix = "custom.kafka-snapshot")
 public class SnapshotConsumerConfig {
-
-    @Value("${custom.kafka.bootstrap-servers}")
     private String bootstrapServers;
-
     private SnapshotConsumer snapshotConsumer = new SnapshotConsumer();
 
     @Getter
@@ -25,5 +21,4 @@ public class SnapshotConsumerConfig {
         private String autoOffsetReset;
         private String groupId;
     }
-
 }
