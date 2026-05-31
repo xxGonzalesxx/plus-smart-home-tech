@@ -7,4 +7,5 @@ public class SensorsSnapshotDeserializer extends BaseAvroDeserializer<SensorsSna
     public SensorsSnapshotDeserializer() {
         super(SensorsSnapshotAvro.getClassSchema());
     }
+
 }

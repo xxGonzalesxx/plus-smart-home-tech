@@ -44,7 +44,7 @@ public class ScenarioAddedEventHandler implements HubEventHandler {
 
         var avroEvent = HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(ScenarioAddedEventAvro.newBuilder()
                         .setName(scenarioEvent.getName())
                         .setConditions(conditions)

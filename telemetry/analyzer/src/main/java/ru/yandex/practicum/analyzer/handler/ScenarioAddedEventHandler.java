@@ -3,7 +3,6 @@ package ru.yandex.practicum.analyzer.handler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import ru.yandex.practicum.analyzer.model.entity.Scenario;
 import ru.yandex.practicum.analyzer.model.entity.mapper.ActionMapper;
 import ru.yandex.practicum.analyzer.model.entity.mapper.ConditionMapper;

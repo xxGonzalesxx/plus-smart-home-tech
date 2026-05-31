@@ -34,7 +34,7 @@ public class ScenarioRemovedEventHandler implements HubEventHandler {
 
         var avroEvent = HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(ScenarioRemovedEventAvro.newBuilder()
                         .setName(scenarioRemovedEvent.getName())
                         .build())

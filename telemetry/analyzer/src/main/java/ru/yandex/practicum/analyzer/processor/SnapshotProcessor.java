@@ -9,7 +9,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.stereotype.Component;
-
 import ru.yandex.practicum.analyzer.broker.AnalyzerTopics;
 import ru.yandex.practicum.analyzer.config.SnapshotConsumerConfig;
 import ru.yandex.practicum.analyzer.model.entity.Action;
@@ -137,6 +136,10 @@ public class SnapshotProcessor {
             }
         }
     }
+
+    /**
+     * Проверяет, выполняются ли ВСЕ условия заданного сценария.
+     */
     private boolean matchConditions(Map<String, Condition> scenarioConditions,
                                     Map<String, SensorStateAvro> sensorsState) {
         return scenarioConditions.entrySet().stream().allMatch(entry -> {
@@ -168,6 +171,10 @@ public class SnapshotProcessor {
             }
         });
     }
+
+    /**
+     * Распаковывает Avro Union состояния датчика, опираясь на требуемый ConditionTypeAvro.
+     */
     private Object getSensorValue(Object avroUnionData, ConditionTypeAvro conditionType) {
         return switch (conditionType) {
             case TEMPERATURE -> {
@@ -186,7 +193,11 @@ public class SnapshotProcessor {
             case SWITCH -> avroUnionData instanceof SwitchSensorAvro s ? s.getState() : null;
         };
     }
-     boolean checkOperation(Object actual, ConditionOperationAvro operation, Integer expectedValue) {
+
+    /**
+     * Выполняет сравнение объектов (Integer или Boolean) на основе Avro-операции.
+     */
+    private boolean checkOperation(Object actual, ConditionOperationAvro operation, Integer expectedValue) {
         if (actual instanceof Boolean actualBool) {
             if (operation != ConditionOperationAvro.EQUALS) {
                 log.warn("Для булевых условий поддерживается только операция EQUALS. Получено: {}", operation);
@@ -207,4 +218,5 @@ public class SnapshotProcessor {
 
         return false;
     }
+
 }

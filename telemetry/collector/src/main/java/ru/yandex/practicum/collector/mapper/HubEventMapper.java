@@ -23,7 +23,7 @@ public class HubEventMapper {
 
         HubEventAvro.Builder builder = HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp().toEpochMilli());
+                .setTimestamp(event.getTimestamp());
 
         if (event instanceof DeviceAddedEvent) {
             DeviceAddedEvent added = (DeviceAddedEvent) event;

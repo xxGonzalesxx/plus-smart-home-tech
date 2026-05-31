@@ -5,7 +5,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.analyzer.processor.HubEventProcessor;
 import ru.yandex.practicum.analyzer.processor.SnapshotProcessor;
-;
 
 @Component
 @AllArgsConstructor
