@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.analyzer.broker.AnalyzerTopics;
 import ru.yandex.practicum.analyzer.config.HubEventConsumerConfig;
 import ru.yandex.practicum.analyzer.handler.HubEventHandler;
-import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 
 import java.time.Duration;
 import java.util.List;

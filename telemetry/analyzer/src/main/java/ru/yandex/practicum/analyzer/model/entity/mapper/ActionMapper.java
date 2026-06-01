@@ -17,13 +17,13 @@ public class ActionMapper {
 
     private Integer getValue(Object value) {
         if (value == null) {
-            return 0;  // ✅ Возвращаем 0 вместо null
+            return 0;
         }
         if (value instanceof Integer) {
             return (Integer) value;
         } else if (value instanceof Boolean) {
             return (Boolean) value ? 1 : 0;
         }
-        return 0;  // ✅ Безопасное значение по умолчанию
+        return 0;
     }
 }

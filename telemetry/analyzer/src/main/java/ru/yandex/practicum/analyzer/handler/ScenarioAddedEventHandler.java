@@ -7,7 +7,9 @@ import ru.yandex.practicum.analyzer.model.entity.Scenario;
 import ru.yandex.practicum.analyzer.model.entity.mapper.ActionMapper;
 import ru.yandex.practicum.analyzer.model.entity.mapper.ConditionMapper;
 import ru.yandex.practicum.analyzer.repository.ScenarioRepository;
-import ru.yandex.practicum.kafka.telemetry.event.*;
+import ru.yandex.practicum.kafka.telemetry.event.DeviceActionAvro;
+import ru.yandex.practicum.kafka.telemetry.event.ScenarioAddedEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.ScenarioConditionAvro;
 
 import java.util.Optional;
 import java.util.stream.Collectors;

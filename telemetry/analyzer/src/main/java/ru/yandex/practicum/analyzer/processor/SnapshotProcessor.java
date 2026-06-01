@@ -47,13 +47,13 @@ public class SnapshotProcessor {
     public void start() {
         try {
             Properties properties = new Properties();
-            properties.put(org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+            properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                     consumerConfig.getBootstrapServers());
-            properties.put(org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+            properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                     consumerConfig.getSnapshotConsumer().getKeyDeserializer());
-            properties.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+            properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                     consumerConfig.getSnapshotConsumer().getValueDeserializer());
-            properties.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+            properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
                     consumerConfig.getSnapshotConsumer().getAutoOffsetReset());
             properties.put(ConsumerConfig.GROUP_ID_CONFIG,
                     consumerConfig.getSnapshotConsumer().getGroupId());
@@ -70,7 +70,6 @@ public class SnapshotProcessor {
                     log.info("Поступили данные состояния датчиков: {}", record.value());
                     SensorsSnapshotAvro snapshot = record.value();
 
-                    // Получаем все сценарии для хаба
                     List<Scenario> scenariosForHub = scenarioRepository.findByHubId(snapshot.getHubId());
                     log.debug("Найдено сценариев для хаба {}: {}", snapshot.getHubId(), scenariosForHub.size());
 
@@ -89,12 +88,13 @@ public class SnapshotProcessor {
                                 return conditionsMatch;
                             })
                             .forEach(scenario -> {
-                                log.info("✓ Условия сценария '{}' выполнены!", scenario.getName());
+                                log.info("Условия сценария '{}' выполнены для хаба {}",
+                                        scenario.getName(), snapshot.getHubId());
 
-                                // Проверяем, есть ли действия в сценарии
                                 Map<String, Action> actions = scenario.getActions();
                                 if (actions == null || actions.isEmpty()) {
-                                    log.warn("⚠️ Сценарий '{}' не имеет действий для выполнения!", scenario.getName());
+                                    log.warn("Сценарий '{}' не имеет действий для выполнения, hubId={}",
+                                            scenario.getName(), snapshot.getHubId());
                                     return;
                                 }
 
@@ -105,24 +105,18 @@ public class SnapshotProcessor {
                                             sensorId, action.getType(), action.getValue());
 
                                     try {
-                                        // Преобразуем Action в DeviceActionProto
                                         DeviceActionProto actionProto = DeviceActionProto.newBuilder()
                                                 .setSensorId(sensorId)
                                                 .setType(ActionTypeProto.valueOf(action.getType().toUpperCase()))
                                                 .setValue(action.getValue() != null ? action.getValue() : 0)
                                                 .build();
 
-                                        log.debug("Action proto построен: sensorId={}, type={}, value={}",
-                                                actionProto.getSensorId(), actionProto.getType(), actionProto.getValue());
-
-                                        // Создаем timestamp
                                         Instant instant = Instant.now();
                                         Timestamp timestampProto = Timestamp.newBuilder()
                                                 .setSeconds(instant.getEpochSecond())
                                                 .setNanos(instant.getNano())
                                                 .build();
 
-                                        // Создаем и отправляем gRPC запрос
                                         DeviceActionRequest grpcRequest = DeviceActionRequest.newBuilder()
                                                 .setHubId(snapshot.getHubId())
                                                 .setScenarioName(scenario.getName())
@@ -130,22 +124,23 @@ public class SnapshotProcessor {
                                                 .setTimestamp(timestampProto)
                                                 .build();
 
-                                        log.info("📤 Отправляю gRPC команду: hubId={}, scenario={}, sensorId={}, actionType={}",
+                                        log.info("Отправляю gRPC команду: hubId={}, scenario={}, sensorId={}, actionType={}",
                                                 snapshot.getHubId(), scenario.getName(), sensorId, action.getType());
 
                                         hubRouterClient.handleDeviceAction(grpcRequest);
 
-                                        log.info("✅ gRPC команда успешно доставлена для датчика {}", sensorId);
+                                        log.info("gRPC команда успешно доставлена: hubId={}, scenario={}, sensorId={}",
+                                                snapshot.getHubId(), scenario.getName(), sensorId);
 
                                     } catch (IllegalArgumentException e) {
-                                        log.error("❌ Ошибка: неверный тип действия '{}'. Поддерживаемые типы: ACTIVATE, DEACTIVATE, INVERSE, SET_VALUE",
-                                                action.getType(), e);
+                                        log.error("Неверный тип действия: hubId={}, scenario={}, sensorId={}, actionType={}, error={}",
+                                                snapshot.getHubId(), scenario.getName(), sensorId, action.getType(), e.getMessage(), e);
                                     } catch (Exception e) {
-                                        log.error("❌ Не удалось отправить gRPC команду для датчика {}: {}",
-                                                sensorId, e.getMessage(), e);
+                                        log.error("Не удалось отправить gRPC команду: hubId={}, scenario={}, sensorId={}, actionType={}, error={}",
+                                                snapshot.getHubId(), scenario.getName(), sensorId, action.getType(), e.getMessage(), e);
                                     }
                                 });
-                            });
+                      });
                 }
             }
 
@@ -159,7 +154,6 @@ public class SnapshotProcessor {
                 if (consumer != null) {
                     consumer.commitSync();
                 }
-
             } catch (Exception e) {
                 log.error("Ошибка при финальном сбросе данных или коммите оффсетов", e);
             } finally {
@@ -171,9 +165,6 @@ public class SnapshotProcessor {
         }
     }
 
-    /**
-     * Проверяет, выполняются ли ВСЕ условия заданного сценария.
-     */
     private boolean matchConditions(Map<String, Condition> scenarioConditions,
                                     Map<String, SensorStateAvro> sensorsState) {
         return scenarioConditions.entrySet().stream().allMatch(entry -> {
@@ -204,16 +195,13 @@ public class SnapshotProcessor {
                 return result;
 
             } catch (IllegalArgumentException e) {
-                log.error("Ошибка маппинга Condition из БД в Avro Enum. Type: {}, Operation: {}",
-                        condition.getType(), condition.getOperation(), e);
+                log.error("Ошибка маппинга Condition из БД в Avro Enum: sensorId={}, type={}, operation={}, error={}",
+                        sensorId, condition.getType(), condition.getOperation(), e.getMessage(), e);
                 return false;
             }
         });
     }
 
-    /**
-     * Распаковывает Avro Union состояния датчика, опираясь на требуемый ConditionTypeAvro.
-     */
     private Object getSensorValue(Object avroUnionData, ConditionTypeAvro conditionType) {
         return switch (conditionType) {
             case TEMPERATURE -> {
@@ -233,9 +221,6 @@ public class SnapshotProcessor {
         };
     }
 
-    /**
-     * Выполняет сравнение объектов (Integer или Boolean) на основе Avro-операции.
-     */
     private boolean checkOperation(Object actual, ConditionOperationAvro operation, Integer expectedValue) {
         if (actual instanceof Boolean actualBool) {
             if (operation != ConditionOperationAvro.EQUALS) {
@@ -257,5 +242,4 @@ public class SnapshotProcessor {
 
         return false;
     }
-
 }

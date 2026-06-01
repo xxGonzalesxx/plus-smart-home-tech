@@ -14,16 +14,10 @@ public class AnalyzerRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
-        // запускаем в отдельном потоке обработчик событий
-        // от пользовательских хабов
         Thread hubEventsThread = new Thread(hubEventProcessor);
         hubEventsThread.setName("HubEventHandlerThread");
         hubEventsThread.start();
 
-        // В текущем потоке начинаем обработку
-        // снимков состояния датчиков
         snapshotProcessor.start();
     }
-
 }
