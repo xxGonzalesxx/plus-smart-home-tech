@@ -12,7 +12,6 @@ public class ActionMapper {
         result.setId(null);
         result.setType(deviceAction.getType().toString());
         result.setValue(getValue(deviceAction.getValue()));
-
         return result;
     }
 
@@ -27,5 +26,4 @@ public class ActionMapper {
         }
         return 0;
     }
-
 }
