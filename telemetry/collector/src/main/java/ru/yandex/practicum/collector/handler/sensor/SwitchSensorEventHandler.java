@@ -35,7 +35,7 @@ public class SwitchSensorEventHandler implements SensorEventHandler {
         var avroEvent = SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(SwitchSensorAvro.newBuilder()
                         .setState(switchEvent.getState())
                         .build())

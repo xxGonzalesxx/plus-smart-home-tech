@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Getter
 @Setter
-//@AllArgsConstructor
 @Configuration
 @ConfigurationProperties("spring.kafka")
 public class AggregatorConsumerConfig {

@@ -6,17 +6,17 @@ import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.collector.broker.CollectorTopics;
+import ru.yandex.practicum.grpc.telemetry.event.MotionSensorProto;
 import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
 import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 
 import java.time.Instant;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class MotionSensorEventHandler implements SensorEventHandler {
-
     private final KafkaTemplate<String, SpecificRecordBase> kafkaTemplate;
 
     @Override
@@ -26,23 +26,26 @@ public class MotionSensorEventHandler implements SensorEventHandler {
 
     @Override
     public void handle(SensorEventProto event) {
-        var motionEvent = event.getMotionSensor();
-        var timestamp = Instant.ofEpochSecond(
-                event.getTimestamp().getSeconds(),
-                event.getTimestamp().getNanos()
-        );
-
-        var avroEvent = SensorEventAvro.newBuilder()
+        MotionSensorProto motionSensorEvent = event.getMotionSensor();
+        Instant timestamp = Instant.ofEpochSecond(event.getTimestamp().getSeconds(), event.getTimestamp().getNanos());
+        SensorEventAvro avroData = SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())  // ← long (milliseconds)
-                .setPayload(MotionSensorAvro.newBuilder()
-                        .setLinkQuality(motionEvent.getLinkQuality())
-                        .setMotion(motionEvent.getMotion())
-                        .setVoltage(motionEvent.getVoltage())
-                        .build())
+                .setTimestamp(timestamp)
+                .setPayload(
+                        MotionSensorAvro.newBuilder()
+                                .setLinkQuality(motionSensorEvent.getLinkQuality())
+                                .setMotion(motionSensorEvent.getMotion())
+                                .setVoltage(motionSensorEvent.getVoltage())
+                                .build()
+                )
                 .build();
 
-        kafkaTemplate.send(CollectorTopics.TELEMETRY_SENSORS_V1, avroEvent.getHubId(), avroEvent);
+        String topic = CollectorTopics.TELEMETRY_SENSORS_V1;
+        String key = avroData.getHubId();
+        log.info("Готовы данные в формате Avro: >>> {} <<< для отправки в Kafka-топик: >>> {} <<<", avroData, topic);
+
+        kafkaTemplate.send(topic, key, avroData);
     }
+
 }

@@ -35,7 +35,7 @@ public class ClimateSensorEventHandler implements SensorEventHandler {
         var avroEvent = SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(ClimateSensorAvro.newBuilder()
                         .setTemperatureC(climateEvent.getTemperatureC())
                         .setHumidity(climateEvent.getHumidity())

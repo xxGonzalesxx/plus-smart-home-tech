@@ -35,7 +35,7 @@ public class DeviceAddedEventHandler implements HubEventHandler {
 
         var avroEvent = HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(DeviceAddedEventAvro.newBuilder()
                         .setId(deviceAddedEvent.getId())
                         .setType(DeviceTypeMapper.toAvro(deviceAddedEvent.getType()))

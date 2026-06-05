@@ -34,7 +34,7 @@ public class DeviceRemovedEventHandler implements HubEventHandler {
 
         var avroEvent = HubEventAvro.newBuilder()
                 .setHubId(event.getHubId())
-                .setTimestamp(timestamp.toEpochMilli())
+                .setTimestamp(timestamp)
                 .setPayload(DeviceRemovedEventAvro.newBuilder()
                         .setId(deviceRemovedEvent.getId())
                         .build())
