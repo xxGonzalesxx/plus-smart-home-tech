@@ -11,3 +11,9 @@ spring:
             - classpath:config/telemetry/{application}
 server:
   port: 8888
+
+# Eureka Client
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
