@@ -1,3 +1,19 @@
+spring:
+  application:
+    name: collector
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        serviceId: config-server
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: ru.yandex.practicum.collector.broker.CollectorAvroSerializer
+
 server:
   port: 8080
 
@@ -5,16 +21,10 @@ grpc:
   server:
     port: 59091
 
-spring:
-  application:
-    name: collector
-  config:
-    import: "optional:configserver:http://localhost:8888"
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: ru.yandex.practicum.collector.broker.CollectorAvroSerializer
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
 
 logging:
   level:
