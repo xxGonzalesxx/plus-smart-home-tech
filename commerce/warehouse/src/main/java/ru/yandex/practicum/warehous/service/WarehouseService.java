@@ -12,9 +12,14 @@ import ru.yandex.practicum.warehous.mapper.WarehouseMapper;
 import ru.yandex.practicum.warehous.model.WarehouseProduct;
 import ru.yandex.practicum.warehous.repository.WarehouseProductRepository;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -52,17 +57,30 @@ public class WarehouseService {
     }
 
     public BookedProductsDto checkProductQuantityEnough(ShoppingCartDto cart) {
-        double totalWeight = 0.0;
-        double totalVolume = 0.0;
+        // 1. Получить все ID продуктов из корзины
+        List<UUID> productIds = new ArrayList<>(cart.getProducts().keySet());
+
+        // 2. ОДИН запрос к БД, вместо всех(оптимизация)
+        List<WarehouseProduct> warehouseProducts = warehouseProductRepository.findAllByProductIdIn(productIds);
+
+        // 3. Преобразовать в Map для быстрого доступа
+        Map<UUID, WarehouseProduct> productMap = warehouseProducts.stream()
+                .collect(Collectors.toMap(WarehouseProduct::getProductId, Function.identity()));
+
+        // 4. Переменные для расчётов
+        BigDecimal totalWeight = BigDecimal.ZERO;
+        BigDecimal totalVolume = BigDecimal.ZERO;
         boolean hasFragile = false;
 
+        // 5. Проверка
         for (Map.Entry<UUID, Integer> entry : cart.getProducts().entrySet()) {
             UUID productId = entry.getKey();
             int quantity = entry.getValue();
 
-            WarehouseProduct product = warehouseProductRepository.findByProductId(productId)
-                    .orElseThrow(() -> new NoSpecifiedProductInWarehouseException(
-                            "Product not found in warehouse: " + productId));
+            WarehouseProduct product = productMap.get(productId);
+            if (product == null) {
+                throw new NoSpecifiedProductInWarehouseException("Product not found: " + productId);
+            }
 
             if (product.getQuantity() < quantity) {
                 throw new ProductInShoppingCartLowQuantityInWarehouse(
@@ -71,12 +89,16 @@ public class WarehouseService {
                                 ", requested: " + quantity);
             }
 
-            totalWeight += product.getWeight() * quantity;
+            // Вес
+            BigDecimal weight = product.getWeight().multiply(BigDecimal.valueOf(quantity));
+            totalWeight = totalWeight.add(weight);
 
-            double volume = product.getDimension().getWidth()
-                    * product.getDimension().getHeight()
-                    * product.getDimension().getDepth();
-            totalVolume += volume * quantity;
+            // Объём
+            BigDecimal volume = product.getDimension().getWidth()
+                    .multiply(product.getDimension().getHeight())
+                    .multiply(product.getDimension().getDepth());
+            BigDecimal totalVolumeForProduct = volume.multiply(BigDecimal.valueOf(quantity));
+            totalVolume = totalVolume.add(totalVolumeForProduct);
 
             if (product.isFragile()) {
                 hasFragile = true;

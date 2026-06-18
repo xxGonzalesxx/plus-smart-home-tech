@@ -6,23 +6,21 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Map;
-
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
 
     @ExceptionHandler(ProductNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleNotFound(ProductNotFoundException e) {
+    public ErrorResponse handleNotFound(ProductNotFoundException e) {
         log.error("Product not found: {}", e.getMessage());
-        return Map.of("error", e.getMessage());
+        return new ErrorResponse("PRODUCT_NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND.value());
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, String> handleOther(Exception e) {
+    public ErrorResponse handleOther(Exception e) {
         log.error("Internal error: {}", e.getMessage(), e);
-        return Map.of("error", "Internal server error");
+        return new ErrorResponse("INTERNAL_ERROR", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 }

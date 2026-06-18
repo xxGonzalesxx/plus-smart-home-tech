@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Embeddable
 @Data
 @Builder
@@ -13,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Dimension {
 
-    private double width;
-    private double height;
-    private double depth;
+    private BigDecimal width;
+    private BigDecimal height;
+    private BigDecimal depth;
 }

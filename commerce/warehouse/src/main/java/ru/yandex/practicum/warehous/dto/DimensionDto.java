@@ -3,10 +3,12 @@ package ru.yandex.practicum.warehous.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 public class DimensionDto {
-    private double width;
-    private double height;
-    private double depth;
+    private BigDecimal width;
+    private BigDecimal height;
+    private BigDecimal depth;
 }
