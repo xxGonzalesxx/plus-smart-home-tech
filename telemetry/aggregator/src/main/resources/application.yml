@@ -1,4 +1,13 @@
 spring:
+  application:
+    name: aggregator
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        serviceId: config-server
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -9,6 +18,14 @@ spring:
       value-deserializer: ru.yandex.practicum.aggregator.broker.SensorEventDeserializer
       auto-offset-reset: earliest
       group-id: aggregator-group
+
+server:
+  port: 0
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
 
 logging:
   level:
