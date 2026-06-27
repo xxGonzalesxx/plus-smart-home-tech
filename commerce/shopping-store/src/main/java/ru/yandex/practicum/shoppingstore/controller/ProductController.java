@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.shoppingstore.dto.ProductDto;
+import ru.yandex.practicum.api.shoppingstore.dto.ProductDto;
 import ru.yandex.practicum.shoppingstore.dto.SetProductQuantityStateRequest;
 import ru.yandex.practicum.shoppingstore.enums.ProductCategory;
 import ru.yandex.practicum.shoppingstore.service.ProductService;

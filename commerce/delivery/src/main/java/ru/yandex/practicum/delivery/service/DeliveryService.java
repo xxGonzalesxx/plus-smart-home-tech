@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.api.common.dto.AddressDto;
+import ru.yandex.practicum.api.delivery.dto.DeliveryDto;
+import ru.yandex.practicum.api.order.dto.OrderDto;
 import ru.yandex.practicum.delivery.enums.DeliveryState;
-import ru.yandex.practicum.delivery.dto.AddressDto;
-import ru.yandex.practicum.delivery.dto.DeliveryDto;
 import ru.yandex.practicum.delivery.exception.NoDeliveryFoundException;
 import ru.yandex.practicum.delivery.model.Address;
 import ru.yandex.practicum.delivery.model.Delivery;
@@ -66,28 +67,34 @@ public class DeliveryService {
         log.info("Delivery failed for order: {}", orderId);
     }
 
-    public BigDecimal deliveryCost(UUID orderId) {
+    public BigDecimal deliveryCost(OrderDto order) {
+        UUID orderId = order.getOrderId();
         Delivery delivery = getDeliveryByOrderId(orderId);
 
-        // Базовая стоимость
-        double cost = 5.0;
+        double cost;
 
-        // 1. Адрес склада (fromAddress)
+        // 1. Адрес склада
         String fromStreet = delivery.getFromAddress().getStreet();
         if (fromStreet != null && fromStreet.contains("ADDRESS_2")) {
-            cost = (5 * 2) + 5; // 15
+            cost = 10 + 5;
         } else {
-            cost = (5 * 1) + 5; // 10
+            cost = 5 + 5;
         }
 
-        // 2. Хрупкость (заглушка — будет передаваться позже)
-        // cost += cost * 0.2
+        // 2. Хрупкость
+        if (order.isFragile()) {
+            cost += cost * 0.2;
+        }
 
-        // 3. Вес (заглушка)
-        // cost += weight * 0.3
+        // 3. Вес
+        if (order.getDeliveryWeight() != null) {
+            cost += order.getDeliveryWeight().doubleValue() * 0.3;
+        }
 
-        // 4. Объём (заглушка)
-        // cost += volume * 0.2
+        // 4. Объём
+        if (order.getDeliveryVolume() != null) {
+            cost += order.getDeliveryVolume().doubleValue() * 0.2;
+        }
 
         // 5. Адрес доставки
         String toStreet = delivery.getToAddress().getStreet();
@@ -135,7 +142,7 @@ public class DeliveryService {
                 .orderId(delivery.getOrderId())
                 .fromAddress(toAddressDto(delivery.getFromAddress()))
                 .toAddress(toAddressDto(delivery.getToAddress()))
-                .deliveryState(delivery.getState())
+                .deliveryState(delivery.getState().name())
                 .build();
     }
 }

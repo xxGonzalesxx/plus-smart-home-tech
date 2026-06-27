@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.shoppingstore.dto.ProductDto;
+import ru.yandex.practicum.api.shoppingstore.dto.ProductDto;
 import ru.yandex.practicum.shoppingstore.dto.SetProductQuantityStateRequest;
 import ru.yandex.practicum.shoppingstore.enums.ProductCategory;
 import ru.yandex.practicum.shoppingstore.enums.ProductState;
@@ -56,7 +56,7 @@ public class ProductService {
         existing.setName(productDto.getProductName());
         existing.setDescription(productDto.getDescription());
         existing.setImageSrc(productDto.getImageSrc());
-        existing.setCategory(productDto.getProductCategory());
+        existing.setCategory(ProductCategory.valueOf(productDto.getProductCategory()));
         existing.setPrice(productDto.getPrice());
 
         Product saved = productRepository.save(existing);

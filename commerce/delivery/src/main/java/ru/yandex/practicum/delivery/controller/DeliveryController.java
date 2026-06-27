@@ -3,7 +3,8 @@ package ru.yandex.practicum.delivery.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.delivery.dto.DeliveryDto;
+import ru.yandex.practicum.api.delivery.dto.DeliveryDto;
+import ru.yandex.practicum.api.order.dto.OrderDto;
 import ru.yandex.practicum.delivery.service.DeliveryService;
 
 import java.math.BigDecimal;
@@ -42,8 +43,8 @@ public class DeliveryController {
     }
 
     @PostMapping("/cost")
-    public BigDecimal deliveryCost(@RequestBody UUID orderId) {
-        log.info("POST /api/v1/delivery/cost - orderId: {}", orderId);
-        return deliveryService.deliveryCost(orderId);
+    public BigDecimal deliveryCost(@RequestBody OrderDto order) {
+        log.info("POST /api/v1/delivery/cost - orderId: {}", order.getOrderId());
+        return deliveryService.deliveryCost(order);
     }
 }

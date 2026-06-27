@@ -4,10 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.api.WarehouseClient;
-import ru.yandex.practicum.api.dto.BookedProductsDto;
+
+import ru.yandex.practicum.api.shoppingcart.dto.ShoppingCartDto;
+import ru.yandex.practicum.api.warehouse.WarehouseClient;
+import ru.yandex.practicum.api.warehouse.dto.BookedProductsDto;
 import ru.yandex.practicum.shoppingcart.dto.ChangeProductQuantityRequest;
-import ru.yandex.practicum.api.dto.ShoppingCartDto;
 import ru.yandex.practicum.shoppingcart.exception.CartNotFoundException;
 import ru.yandex.practicum.shoppingcart.model.Cart;
 import ru.yandex.practicum.shoppingcart.model.CartItem;

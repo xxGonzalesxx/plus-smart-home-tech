@@ -5,10 +5,51 @@ spring:
         locator:
           enabled: true
       routes:
+        # shopping-store
+        - id: shopping_store_service_route
+          uri: lb://shopping-store
+          predicates:
+            - Path=/shopping-store/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # shopping-cart
         - id: shopping_cart_service_route
           uri: lb://shopping-cart
           predicates:
             - Path=/shopping-cart/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # warehouse
+        - id: warehouse_service_route
+          uri: lb://warehouse
+          predicates:
+            - Path=/warehouse/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # order
+        - id: order_service_route
+          uri: lb://order
+          predicates:
+            - Path=/order/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # payment
+        - id: payment_service_route
+          uri: lb://payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # delivery
+        - id: delivery_service_route
+          uri: lb://delivery
+          predicates:
+            - Path=/delivery/**
           filters:
             - PrefixPath=/api/v1
 
