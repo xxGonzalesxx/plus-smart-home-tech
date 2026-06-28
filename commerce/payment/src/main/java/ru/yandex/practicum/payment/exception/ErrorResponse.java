@@ -2,11 +2,12 @@ package ru.yandex.practicum.payment.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import ru.yandex.practicum.api.exception.ErrorType;
 
 @Data
 @AllArgsConstructor
 public class ErrorResponse {
-    private String error;
+    private ErrorType error;
     private String message;
     private int status;
 }
