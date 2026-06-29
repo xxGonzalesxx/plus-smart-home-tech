@@ -1,28 +1,57 @@
 spring:
-  application:
-    name: gateway
-  config:
-    import: "optional:configserver:http://localhost:8888"
   cloud:
-    config:
-      # не загружать другие компоненты до получения конфигурации
-      fail-fast: true
-      # если config-server недоступен, нужно сделать несколько попыток подключиться
-      retry:
-        # используем случайный backoff между попытками
-        useRandomPolicy: true
-        # максимальный интервал, в течение которого делаем попытки (6000 миллисекунд = 6 сек)
-        max-interval: 6000
+    gateway:
       discovery:
-        enabled: true
-        serviceId: config-server
+        locator:
+          enabled: true
+      routes:
+        # shopping-store
+        - id: shopping_store_service_route
+          uri: lb://shopping-store
+          predicates:
+            - Path=/shopping-store/**
+          filters:
+            - PrefixPath=/api/v1
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    preferIpAddress: true
-    hostname: localhost
-    instance-id: "${spring.application.name}:${random.value}"
-    leaseRenewalIntervalInSeconds: 10
+        # shopping-cart
+        - id: shopping_cart_service_route
+          uri: lb://shopping-cart
+          predicates:
+            - Path=/shopping-cart/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # warehouse
+        - id: warehouse_service_route
+          uri: lb://warehouse
+          predicates:
+            - Path=/warehouse/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # order
+        - id: order_service_route
+          uri: lb://order
+          predicates:
+            - Path=/order/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # payment
+        - id: payment_service_route
+          uri: lb://payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - PrefixPath=/api/v1
+
+        # delivery
+        - id: delivery_service_route
+          uri: lb://delivery
+          predicates:
+            - Path=/delivery/**
+          filters:
+            - PrefixPath=/api/v1
+
+server:
+  port: 8080

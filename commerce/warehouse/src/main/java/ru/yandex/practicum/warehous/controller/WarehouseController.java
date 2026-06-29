@@ -3,7 +3,11 @@ package ru.yandex.practicum.warehous.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.warehous.dto.*;
+import ru.yandex.practicum.api.common.dto.AddressDto;
+import ru.yandex.practicum.api.shoppingcart.dto.ShoppingCartDto;
+import ru.yandex.practicum.api.warehouse.dto.AddProductToWarehouseRequest;
+import ru.yandex.practicum.api.warehouse.dto.BookedProductsDto;
+import ru.yandex.practicum.api.warehouse.dto.NewProductInWarehouseRequest;
 import ru.yandex.practicum.warehous.service.WarehouseService;
 
 @Slf4j
